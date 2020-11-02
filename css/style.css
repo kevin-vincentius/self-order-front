@@ -1,1 +1,30 @@
-# Empty CSS file for your own CSS
+.list-barang{
+  width: 100%;
+  height: calc(100vh - 132px);
+  display: block;
+  overflow: auto;
+  margin-top: 16px;
+  padding-bottom: 16px;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+.list-barang .card{
+  transition: box-shadow 0.2s ease;
+  overflow: hidden;
+  cursor: pointer;
+}
+.list-barang .card:hover{
+  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.3);
+}
+.list-barang .card-img-top{
+  transition: transform 0.2s ease;
+}
+.list-barang .card:hover .card-img-top{
+  transform: scale(1.2);
+}
+.list-cart{
+  width: 100%;
+  max-height: calc(100vh - 245px);
+  display: block;
+  overflow: auto;
+}

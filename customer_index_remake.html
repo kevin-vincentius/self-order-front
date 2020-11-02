@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Point of Sales</title>
+    <!-- Load required Bootstrap and BootstrapVue CSS -->
+    <link
+      type="text/css"
+      rel="stylesheet"
+      href="https://unpkg.com/bootstrap/dist/css/bootstrap.min.css"
+    />
+    <link
+      type="text/css"
+      rel="stylesheet"
+      href="https://unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.css"
+    />
+    <link rel="stylesheet" href="./css/style.css" />
+
+    <!-- Load polyfills to support older browsers -->
+    <script
+      src="https://polyfill.io/v3/polyfill.js?features=es2015%2CIntersectionObserver"
+      crossorigin="anonymous"
+    ></script>
+  </head>
+  <body>
+    <div id="app">
+      <b-container fluid>
+        <b-row>
+          <b-col cols="8">
+            <!-- navbar -->
+            <b-navbar toggleable="sm">
+              <b-navbar-brand>
+                <img src="./img/logo.jpg" alt="brand" height="50px" />
+              </b-navbar-brand>
+            </b-navbar>
+
+            <!-- navs -->
+            <b-nav fill>
+              <b-nav-item v-for="item in navs" :key="item.text">
+                {{ item.text }}
+              </b-nav-item>
+            </b-nav>
+
+            <!-- list barang -->
+            <main class="list-barang">
+              <b-row>
+                <b-col
+                  cols="4"
+                  v-for="item in barang"
+                  class="mb-4"
+                  :key="item.id"
+                >
+                  <b-card
+                    :img-src="'./img/'+item.img"
+                    img-alt="barang"
+                    img-top
+                    tag="article"
+                    :title="item.title"
+                    :sub-title="formatCurrency(item.price)"
+                    @click="addCart(item)"
+                  ></b-card>
+                </b-col>
+              </b-row>
+            </main>
+          </b-col>
+          <b-col>
+            <b-list-group flush>
+              <b-list-group-item>
+                <b>Cart</b>
+              </b-list-group-item>
+              <b-list-group-item>
+                <!-- list cart -->
+                <aside class="list-cart">
+                  <b-alert
+                    v-if="carts.length == 0"
+                    variant="warning"
+                    show
+                    class="mb-0"
+                  >
+                    Silahkan pilih barang terlebih dahulu
+                  </b-alert>
+                  <!--  -->
+                  <div v-else :key="u_cart">
+                    <list-cart
+                    v-for="item in carts"
+                    :key="item.id"
+                    :data="item"
+                    @update-cart="updateCart"
+                  ></list-cart>
+                  </div>
+                </aside>
+              </b-list-group-item>
+              <b-list-group-item
+                class="d-flex justify-content-between align-items-center"
+              >
+                <div>Item Total</div>
+                <b-badge variant="primary" pill>{{ total.item }}</b-badge>
+              </b-list-group-item>
+              <b-list-group-item
+                class="d-flex justify-content-between align-items-center"
+              >
+                <div>Harga Total</div>
+                <div class="text-danger">
+                  {{ new Intl.NumberFormat('id-ID', { style: 'currency',
+                  currency: 'IDR', maximumSignificantDigits: 6 }).format(total.price) }}
+                </div>
+              </b-list-group-item>
+              <b-list-group-item>
+                <b-button
+                  block
+                  size="lg"
+                  style="background-color: orange; color: white; border: none"
+                >
+                  Bayar
+                </b-button>
+              </b-list-group-item>
+            </b-list-group>
+          </b-col>
+        </b-row>
+      </b-container>
+    </div>
+
+    <!-- Load Vue followed by BootstrapVue -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+    <!-- <script src="https://unpkg.com/vue@latest/dist/vue.min.js"></script> -->
+    <script src="https://unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.js"></script>
+
+    <!-- Load the following for BootstrapVueIcons support -->
+    <script src="https://unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue-icons.min.js"></script>
+    <script>
+      Vue.component("list-cart", {
+        template: `
+        <b-alert type="light" variant="secondary" show class="mb-2">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <b-form-group :label="data.title" class="mb-0">
+                <b-form-radio-group
+                  id="pesanan"
+                  v-model="data.selected"
+                  :options="options"
+                  buttons
+                  button-variant="primary"
+                  size="sm"
+                  name="radio-btn-outline"
+                ></b-form-radio-group>
+              </b-form-group>
+            </div>
+            <!--  -->
+            <div class="text-right">
+              <div class="text-danger mb-1">
+                {{ new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumSignificantDigits: 6 }).format(data.price) }}
+              </div>
+              <b-button-group size="sm">
+                <b-button @click="changeJumlah('-')">-</b-button>
+                <b-button variant="outline-secondary" disabled style="color: black;">{{ data.jumlah }}</b-button>
+                <b-button @click="changeJumlah('+')">+</b-button>
+              </b-button-group>
+            </div>
+          </div>
+        </b-alert>
+        `,
+        props: ["data"],
+        data: () => ({
+          options: [
+            { text: "S", value: "S" },
+            { text: "L", value: "L" },
+          ]
+        }),
+        methods: {
+          changeJumlah(op) {
+            if (op == "+") {
+              this.data.jumlah++;
+              this.$emit("update-cart", this.data);
+            } else {
+              let result = this.data.jumlah
+              if (result == 1) {
+                this.data.jumlah = 0
+              } else {
+                this.data.jumlah--
+              }
+              this.$emit("update-cart", this.data);
+            }
+          },
+        },
+      });
+
+      const app = new Vue({
+        el: "#app",
+        data: {
+          navs: [
+            { text: "Favorit", link: "" },
+            { text: "Aneka Makanan", link: "" },
+            { text: "Aneka Minuman", link: "" },
+            { text: "Aneka Sate", link: "" },
+            { text: "Camilan", link: "" },
+          ],
+          barang: [
+            {
+              id: 1,
+              img: "256x202.jpg",
+              title: "Cheese Burger",
+              price: 50000,
+            },
+            {
+              id: 2,
+              img: "256x202.jpg",
+              title: "Beef Burger",
+              price: 75000,
+            },
+          ],
+          carts: [],
+          u_cart: 0,
+          total: {
+            item: 0,
+            price: 0
+          }
+        },
+        watch: {
+          'carts.jumlah': function(val) {
+            val.map(cart => {
+              this.total.item =+ cart.jumlah
+              this.total.price =+ cart.price
+            })
+          }
+        },
+        methods: {
+          formatCurrency(price) {
+            return new Intl.NumberFormat("id-ID", {
+              style: "currency",
+              currency: "IDR",
+              maximumSignificantDigits: 5,
+            }).format(price);
+          },
+          updateTotal(carts) {
+            let result = {
+              item: 0,
+              price: 0
+            }
+            carts.map(cart => {
+              result.item += cart.jumlah
+              let price = cart.price * cart.jumlah
+              result.price += price
+            })
+            this.total.item = result.item
+            this.total.price = result.price
+          },
+          addCart(barang) {
+            if (this.carts.length > 0) {
+              checkBarang = this.carts.findIndex(x => x.id == barang.id)
+              if (checkBarang == -1) {
+                barang.jumlah = 1;
+                barang.selected = "S";
+                this.carts.push(barang);
+              } else {
+                this.carts.map((cart) => {
+                  if (cart.id == barang.id) {
+                    cart.jumlah++
+                  }
+                });
+              }
+              this.u_cart++
+            } else {
+              barang.jumlah = 1;
+              barang.selected = "S";
+              this.carts.push(barang);
+            }
+            this.updateTotal(this.carts)
+          },
+          updateCart(data) {
+            if (data.jumlah == 0) {
+              let index = this.carts.findIndex(x => x.id == data.id)
+              this.carts.splice(index, 1)
+            } else {
+              this.carts.map((cart) => {
+                if (cart.id == data.id) {
+                  cart.jumlah = data.jumlah;
+                }
+              });
+            }
+            this.u_cart++
+            this.updateTotal(this.carts)
+          },
+        },
+      });
+    </script>
+  </body>
+</html>
